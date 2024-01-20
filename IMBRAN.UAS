@@ -1,0 +1,90 @@
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class PersonDAO {
+    private Connection connection;
+
+    // Konstruktor dan koneksi database
+    public PersonDAO() {
+        try {
+            // Gantilah "jdbc:sqlite:your_database.db" sesuai dengan nama database Anda
+            connection = DriverManager.getConnection("jdbc:sqlite:your_database.db");
+            createTable(); // Metode ini membuat tabel jika belum ada
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Membuat tabel jika belum ada
+    private void createTable() {
+        try (Statement statement = connection.createStatement()) {
+            String sql = "CREATE TABLE IF NOT EXISTS people (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, age INTEGER)";
+            statement.execute(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Metode tambah data
+    public void addPerson(Person person) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO people (name, age) VALUES (?, ?)")) {
+            preparedStatement.setString(1, person.getName());
+            preparedStatement.setInt(2, person.getAge());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Metode baca data
+    public List<Person> getAllPeople() {
+        List<Person> people = new ArrayList<>();
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery("SELECT * FROM people")) {
+            while (resultSet.next()) {
+                Person person = new Person();
+                person.setId(resultSet.getInt("id"));
+                person.setName(resultSet.getString("name"));
+                person.setAge(resultSet.getInt("age"));
+                people.add(person);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return people;
+    }
+
+    // Metode hapus data
+    public void deletePerson(int id) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM people WHERE id = ?")) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Metode perbarui data
+    public void updatePerson(Person person) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("UPDATE people SET name = ?, age = ? WHERE id = ?")) {
+            preparedStatement.setString(1, person.getName());
+            preparedStatement.setInt(2, person.getAge());
+            preparedStatement.setInt(3, person.getId());
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Tutup koneksi saat aplikasi berakhir
+    public void closeConnection() {
+        try {
+            if (connection != null && !connection.isClosed()) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+}
